@@ -2,6 +2,12 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 import sqlite3
+import base64
+
+def get_base64_image(image_path):
+    with open(image_path, "rb") as image_file:
+        encoded = base64.b64encode(image_file.read()).decode()
+    return encoded
 
 from src.budget import calculate_trip_budget
 from src.itinerary import generate_itinerary
@@ -13,18 +19,41 @@ from src.ai_planner import generate_ai_itinerary
 
 st.set_page_config(
     page_title="TripWise AI",
-    page_icon="✈️",
     layout="wide"
 )
 
-st.title("✈️ TripWise AI")
-st.subheader("AI-Powered Budget Travel Planner")
+bg_image = get_base64_image("assets/suraj.jpeg")
 
-st.write("Plan smarter trips based on your budget, travel style, and schedule.")
+st.markdown(f"""
+<style>
+.stApp {{
+    background:
+        linear-gradient(
+            rgba(0,0,0,0.65),
+            rgba(0,0,0,0.65)
+        ),
+        url("data:image/jpeg;base64,{bg_image}");
+
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: white;
+}}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="hero-box">
+    <h1>TripWise AI</h1>
+    <p>Plan budget-friendly trips with smarter itineraries, cost breakdowns, stay suggestions, and travel recommendations.</p>
+</div>
+""", unsafe_allow_html=True)
+
 st.info(
     "Note: This version provides state-level recommendations. City-level route optimization will be added in a future version."
 )
 create_trips_table()
+
 # ---------------- USER INPUTS ---------------- #
 
 US_STATES = [
@@ -39,32 +68,49 @@ US_STATES = [
     "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington",
     "West Virginia", "Wisconsin", "Wyoming"
 ]
+# ---------------- USER INPUTS ---------------- #
 
-destination = st.selectbox("Select destination state", US_STATES)
-
-budget = st.number_input(
-    "Enter your total budget ($)",
-    min_value=0,
-    value=500
+st.markdown(
+    '<div class="section-title">🧭 Plan Your Trip</div>',
+    unsafe_allow_html=True
 )
 
-transport = st.selectbox(
-    "Transportation Type",
-    [
-        "Own Vehicle",
-        "Rental Car",
-        "Public Transport"
-    ]
-)
+col1, col2 = st.columns(2)
 
-stay_type = st.selectbox(
-    "Stay Preference",
-    [
-        "Airbnb",
-        "Hotel",
-        "Motel"
-    ]
-)
+with col1:
+    destination = st.selectbox(
+        "Select destination state",
+        US_STATES
+    )
+
+    budget = st.number_input(
+        "Enter your total budget ($)",
+        min_value=0,
+        value=500
+    )
+
+    travel_date = st.date_input("Travel Start Date")
+
+with col2:
+    return_date = st.date_input("Return Date")
+
+    transport = st.selectbox(
+        "Transportation Type",
+        [
+            "Own Vehicle",
+            "Rental Car",
+            "Public Transport"
+        ]
+    )
+
+    stay_type = st.selectbox(
+        "Stay Preference",
+        [
+            "Airbnb",
+            "Hotel",
+            "Motel"
+        ]
+    )
 
 food_preference = st.selectbox(
     "Cuisine Preference",
@@ -77,15 +123,14 @@ food_preference = st.selectbox(
     ]
 )
 
-travel_date = st.date_input("Travel Start Date")
-return_date = st.date_input("Return Date")
-
 days = (return_date - travel_date).days + 1
 
 if days <= 0:
     st.error("Return date must be after or equal to the travel start date.")
 else:
-    st.info(f"🧳 Number of Travel Days: {days}")
+    st.success(f"🧳 Number of Travel Days: {days}")
+
+
 
 # ---------------- GENERATE PLAN ---------------- #
 
